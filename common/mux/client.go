@@ -174,6 +174,7 @@ type ClientWorker struct {
 	link           transport.Link
 	done           *done.Instance
 	strategy       ClientStrategy
+	timeCretaed    time.Time
 }
 
 var (
@@ -188,6 +189,7 @@ func NewClientWorker(stream transport.Link, s ClientStrategy) (*ClientWorker, er
 		link:           stream,
 		done:           done.New(),
 		strategy:       s,
+		timeCretaed:    time.Now(),
 	}
 
 	go c.fetchOutput()
@@ -299,7 +301,7 @@ func (m *ClientWorker) Dispatch(ctx context.Context, link *transport.Link) bool 
 		return false
 	}
 	errors.LogInfo(ctx, "allocated mux.cool subConnection ID: ", s.ID, "/", m.strategy.MaxReuseTimes)
-	errors.LogInfo(ctx, "living subConnections:", sm.Size() , "/", m.strategy.MaxConcurrency)
+	errors.LogInfo(ctx, "living subConnections:", m.ActiveConnections(), "/", m.strategy.MaxConcurrency, ", this mux connection has been created for ", time.Since(m.timeCretaed).Truncate(time.Second))
 	s.input = link.Reader
 	s.output = link.Writer
 	go fetchInput(ctx, s, m.link.Writer)
